@@ -18,15 +18,20 @@
 ```text
 PhamTrungHieu_23001876/
 │
-├── TH1/                  
-│   
+├── TH1/
+│   ├── bai1.php
+│   ├── bai2.php
+│   ├── bai3.php
+│   └── bai4.php
 │
-├── TH2/                 
-├── TH3/                 
-├── TH4/                 
-├── TH5/                  
+├── TH2/
+│   ├── bai1.php
+│   └── bai2.php
 │
-├           
+├── TH3/
+├── TH4/
+├── TH5/
+│
 └── README.md             
 ```
 
