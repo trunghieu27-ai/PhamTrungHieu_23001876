@@ -341,3 +341,47 @@ main.content-area {
     margin: 1.25rem 0;
     text-align: left;
 }
+
+/* User auth menu in header */
+.user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-left: 0.75rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #f8fafc;
+    padding: 0.3rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.btn-outline-danger {
+    background-color: transparent;
+    color: #fca5a5;
+    border: 1px solid #ef4444;
+}
+
+.btn-outline-danger:hover {
+    background-color: #ef4444;
+    color: #ffffff;
+}
+
+.btn-outline-light {
+    background-color: transparent;
+    color: #f1f5f9;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+

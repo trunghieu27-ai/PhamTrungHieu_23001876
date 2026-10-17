@@ -5,6 +5,9 @@
  * Sinh viên: Phạm Trung Hiếu (MSSV: 23001876)
  */
 
+require_once __DIR__ . '/common/auth.php';
+requireLogin();
+
 require_once __DIR__ . '/model/product.php';
 
 $pageTitle = 'Chỉnh sửa sản phẩm';

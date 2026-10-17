@@ -27,3 +27,17 @@ ON DUPLICATE KEY UPDATE
     `name` = VALUES(`name`), 
     `price` = VALUES(`price`), 
     `quantity` = VALUES(`quantity`);
+
+-- Tạo bảng users (chức năng Đăng nhập - Đăng xuất)
+CREATE TABLE IF NOT EXISTS `users` (
+    `id` INT AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(50) NOT NULL UNIQUE,
+    `password` VARCHAR(255) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Thêm tài khoản mẫu (admin / mật khẩu: 123456 đã được mã hóa bằng password_hash)
+INSERT INTO `users` (`id`, `username`, `password`) VALUES
+(1, 'admin', '$2y$10$KR/9r.Y/6JoWg6MHYRgPAOyhUiolGkJq/F43d4x6nRpO79Eq.flEy')
+ON DUPLICATE KEY UPDATE 
+    `password` = VALUES(`password`);
+

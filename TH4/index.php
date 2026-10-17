@@ -44,18 +44,34 @@ include __DIR__ . '/view/header.php';
 
     <!-- Phím tắt điều hướng -->
     <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-        <a href="product_list.php" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
-            📋 Xem danh sách sản phẩm
-        </a>
-        <a href="product_add.php" class="btn btn-success" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
-            ➕ Thêm sản phẩm mới
-        </a>
+        <?php if ($isLoggedIn): ?>
+            <a href="product_list.php" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
+                📋 Xem danh sách sản phẩm
+            </a>
+            <a href="product_add.php" class="btn btn-success" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
+                ➕ Thêm sản phẩm mới
+            </a>
+            <a href="logout.php" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; font-size: 1rem;" onclick="return confirm('Bạn có chắc chắn muốn đăng xuất?');">
+                🚪 Đăng xuất
+            </a>
+        <?php else: ?>
+            <a href="login.php" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
+                🔐 Đăng nhập hệ thống
+            </a>
+            <a href="register.php" class="btn btn-success" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
+                📝 Đăng ký tài khoản
+            </a>
+            <a href="product_list.php" class="btn btn-secondary" style="padding: 0.75rem 1.5rem; font-size: 1rem;">
+                📋 Danh sách sản phẩm (Cần đăng nhập)
+            </a>
+        <?php endif; ?>
     </div>
 </div>
 
 <div class="card" style="margin-top: 1.5rem;">
     <h3 style="font-size: 1.15rem; margin-bottom: 0.75rem; color: #334155;">✨ Các chức năng chính của hệ thống:</h3>
     <ul style="margin-left: 1.5rem; line-height: 1.8; color: #475569;">
+        <li><strong>Xác thực &amp; Bảo mật (Auth):</strong> Đăng ký, Đăng nhập và Đăng xuất với mật khẩu băm an toàn <code>password_hash()</code>, kiểm soát truy cập trang quản trị qua <code>$_SESSION</code>.</li>
         <li><strong>Xem danh sách (Read):</strong> Hiển thị bảng sản phẩm trực quan, phân loại tồn kho, định dạng tiền tệ chuẩn VNĐ.</li>
         <li><strong>Thêm sản phẩm (Create):</strong> Form kiểm tra tính hợp lệ dữ liệu (tên không rỗng, giá &gt; 0, số lượng &ge; 0).</li>
         <li><strong>Chỉnh sửa sản phẩm (Update):</strong> Nạp dữ liệu cũ theo ID và cập nhật an toàn với Prepared Statement.</li>

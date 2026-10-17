@@ -8,6 +8,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 $currentScript = basename($_SERVER['SCRIPT_NAME']);
+$isLoggedIn = isset($_SESSION['user']) && !empty($_SESSION['user']['id']);
+$currentUsername = $isLoggedIn ? htmlspecialchars($_SESSION['user']['username']) : '';
 ?>
 <!DOCTYPE html>
 <html lang="vi">
@@ -25,8 +27,28 @@ $currentScript = basename($_SERVER['SCRIPT_NAME']);
             </a>
             <nav class="main-nav">
                 <a href="index.php" class="nav-link <?php echo ($currentScript === 'index.php') ? 'active' : ''; ?>">Trang chủ</a>
-                <a href="product_list.php" class="nav-link <?php echo ($currentScript === 'product_list.php') ? 'active' : ''; ?>">Danh sách sản phẩm</a>
-                <a href="product_add.php" class="nav-link <?php echo ($currentScript === 'product_add.php') ? 'active' : ''; ?>">+ Thêm sản phẩm</a>
+
+                <?php if ($isLoggedIn): ?>
+                    <a href="product_list.php" class="nav-link <?php echo ($currentScript === 'product_list.php') ? 'active' : ''; ?>">Danh sách sản phẩm</a>
+                    <a href="product_add.php" class="nav-link <?php echo ($currentScript === 'product_add.php') ? 'active' : ''; ?>">+ Thêm sản phẩm</a>
+                    <div class="user-menu">
+                        <span class="user-badge" title="Tài khoản hiện tại">
+                            👤 <strong><?php echo $currentUsername; ?></strong>
+                        </span>
+                        <a href="logout.php" class="btn btn-outline-danger btn-sm" onclick="return confirm('Bạn có chắc chắn muốn đăng xuất không?');">
+                            Đăng xuất
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <div class="user-menu">
+                        <a href="login.php" class="nav-link <?php echo ($currentScript === 'login.php') ? 'active' : ''; ?>">
+                            🔐 Đăng nhập
+                        </a>
+                        <a href="register.php" class="btn btn-primary btn-sm <?php echo ($currentScript === 'register.php') ? 'active' : ''; ?>">
+                            📝 Đăng ký
+                        </a>
+                    </div>
+                <?php endif; ?>
             </nav>
         </div>
     </header>
