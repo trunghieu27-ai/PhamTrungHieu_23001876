@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 1 - Thẻ thông tin sinh viên (VueJS)</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            padding: 32px 16px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .top-nav {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .top-nav a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #4f46e5;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
+        }
+        .top-nav a.active, .top-nav a:hover {
+            background: #4f46e5;
+            color: #ffffff;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(30, 41, 59, 0.08);
+            overflow: hidden;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: white;
+            padding: 24px;
+            text-align: center;
+        }
+        .avatar-wrapper {
+            width: 110px;
+            height: 110px;
+            margin: 0 auto 14px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.85);
+            overflow: hidden;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .avatar-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 20%;
+        }
+        .student-name {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .student-id {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        .card-body {
+            padding: 24px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .info-row:last-of-type {
+            border-bottom: none;
+        }
+        .label {
+            color: #64748b;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .value {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        /* Class đổi màu xếp loại (Yêu cầu 5) */
+        .rank-gioi {
+            background-color: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+        .rank-kha {
+            background-color: #dbeafe;
+            color: #1d4ed8;
+            border: 1px solid #93c5fd;
+        }
+        .rank-trung-binh {
+            background-color: #fef9c3;
+            color: #a16207;
+            border: 1px solid #fde047;
+        }
+        .rank-chua-dat {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+        .status-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .status-inactive {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+        .btn-toggle {
+            width: 100%;
+            margin-top: 16px;
+            padding: 11px 16px;
+            border: none;
+            border-radius: 10px;
+            background: #4f46e5;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-toggle:hover {
+            background: #4338ca;
+        }
+        .intro-box {
+            margin-top: 16px;
+            padding: 16px;
+            background: #f8fafc;
+            border-left: 4px solid #4f46e5;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #334155;
+        }
+        .control-panel {
+            padding: 24px;
+        }
+        .control-panel h3 {
+            font-size: 17px;
+            margin-bottom: 6px;
+            color: #1e293b;
+        }
+        .control-panel p.sub {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 16px;
+        }
+        .form-group {
+            margin-bottom: 14px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #334155;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="top-nav">
+            <a href="index.html">Trang chủ TH6</a>
+            <a href="bai1.html" class="active">Bài 1: Thẻ sinh viên</a>
+            <a href="bai2.html">Bài 2: Đặt vé xem phim</a>
+            <a href="bai3.html">Bài 3: Quản lý công việc</a>
+        </div>
+
+        <div class="grid">
+            <!-- Thẻ thông tin sinh viên -->
+            <div class="card">
+                <div class="card-header">
+                    <!-- Yêu cầu 3: Gắn đường dẫn ảnh và nội dung thay thế bằng v-bind -->
+                    <div class="avatar-wrapper">
+                        <img v-bind:src="avatarUrl" v-bind:alt="avatarAlt">
+                    </div>
+                    <!-- Yêu cầu 2: Hiển thị họ tên bằng {{ }} -->
+                    <div class="student-name">{{ fullName }}</div>
+                    <div class="student-id">MSSV: {{ studentId }}</div>
+                </div>
+
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="label">Mã sinh viên:</span>
+                        <span class="value">{{ studentId }}</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="label">Họ và tên:</span>
+                        <!-- Yêu cầu 2: Hiển thị họ tên bằng {{ }} -->
+                        <span class="value">{{ fullName }}</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="label">Lớp:</span>
+                        <!-- Yêu cầu 2: Hiển thị tên lớp bằng v-text -->
+                        <span class="value" v-text="className"></span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="label">Điểm trung bình:</span>
+                        <span class="value" :style="{ color: gpa >= 5 ? '#0f172a' : '#dc2626' }">
+                            {{ gpa }}
+                        </span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="label">Xếp loại học lực:</span>
+                        <!-- Yêu cầu 4 & 5: Dựa trên điểm trung bình hiển thị xếp loại (v-if) và đổi màu bằng :class -->
+                        <span
+                            v-if="gpa >= 8 && gpa <= 10"
+                            class="badge"
+                            :class="'rank-gioi'"
+                        >
+                            Giỏi
+                        </span>
+                        <span
+                            v-else-if="gpa >= 6.5 && gpa < 8"
+                            class="badge"
+                            :class="'rank-kha'"
+                        >
+                            Khá
+                        </span>
+                        <span
+                            v-else-if="gpa >= 5 && gpa < 6.5"
+                            class="badge"
+                            :class="'rank-trung-binh'"
+                        >
+                            Trung bình
+                        </span>
+                        <span
+                            v-else
+                            class="badge"
+                            :class="'rank-chua-dat'"
+                        >
+                            Chưa đạt
+                        </span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="label">Trạng thái học tập:</span>
+                        <!-- Yêu cầu 6: Hiển thị "Đang học" hoặc "Đã nghỉ" theo trạng thái -->
+                        <span v-if="isStudying" class="badge status-active">Đang học</span>
+                        <span v-else class="badge status-inactive">Đã nghỉ</span>
+                    </div>
+
+                    <!-- Yêu cầu 7: Tạo nút bật/tắt phần giới thiệu bằng v-show -->
+                    <button class="btn-toggle" @click="showIntro = !showIntro">
+                        {{ showIntro ? 'Ẩn phần giới thiệu' : 'Hiện phần giới thiệu' }}
+                    </button>
+
+                    <div class="intro-box" v-show="showIntro">
+                        <strong>Giới thiệu bản thân:</strong>
+                        <p style="margin-top: 6px;">{{ bio }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng thử nghiệm thay đổi dữ liệu để kiểm tra tính phản ứng (Reactivity) -->
+            <div class="card control-panel">
+                <h3>Bảng điều khiển dữ liệu (Test Reactivity)</h3>
+                <p class="sub">Thay đổi dữ liệu bên dưới để kiểm tra giao diện và màu sắc tự động cập nhật.</p>
+
+                <div class="form-group">
+                    <label>Mã sinh viên:</label>
+                    <input type="text" v-model="studentId">
+                </div>
+
+                <div class="form-group">
+                    <label>Họ và tên:</label>
+                    <input type="text" v-model="fullName">
+                </div>
+
+                <div class="form-group">
+                    <label>Lớp:</label>
+                    <input type="text" v-model="className">
+                </div>
+
+                <div class="form-group">
+                    <label>Điểm trung bình (0 - 10):</label>
+                    <input type="number" step="0.1" min="0" max="10" v-model.number="gpa">
+                </div>
+
+                <div class="form-group">
+                    <label>Đường dẫn ảnh đại diện (URL):</label>
+                    <input type="text" v-model="avatarUrl">
+                </div>
+
+                <div class="form-group">
+                    <label class="checkbox-row">
+                        <input type="checkbox" v-model="isStudying">
+                        Đang theo học tại trường
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    // Yêu cầu 1: Khai báo dữ liệu gồm mã SV, họ tên, lớp, ảnh đại diện, ĐTB, trạng thái đang học
+                    studentId: '23001876',
+                    fullName: 'Phạm Trung Hiếu',
+                    className: 'K68-Khoa học máy tính và thông tin',
+                    avatarUrl: 'avatar.jpg',
+                    avatarAlt: 'Ảnh đại diện sinh viên Phạm Trung Hiếu',
+                    gpa: 8.5,
+                    isStudying: true,
+                    showIntro: true,
+                    bio: 'Sinh viên ngành Khoa học máy tính và thông tin yêu thích phát triển ứng dụng Web với VueJS và PHP.'
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+
