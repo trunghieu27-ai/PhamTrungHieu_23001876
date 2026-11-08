@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 3 - Giỏ hàng với props và $emit (Vue 3)</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0fdf4 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            padding: 28px 16px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        .top-nav {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .top-nav a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #4f46e5;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
+        }
+        .top-nav a.active, .top-nav a:hover {
+            background: #4f46e5;
+            color: #ffffff;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(30, 41, 59, 0.08);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #ffffff;
+            padding: 22px 26px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .card-header h2 {
+            font-size: 22px;
+        }
+        .btn-reset {
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-reset:hover {
+            background: rgba(255, 255, 255, 0.32);
+        }
+        .card-body {
+            padding: 24px;
+        }
+        .message-alert {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .cart-table {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow-x: auto;
+        }
+        .cart-header, .cart-row {
+            display: grid;
+            grid-template-columns: 80px 1.8fr 1.2fr 1.5fr 1.2fr 90px;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            min-width: 680px;
+        }
+        .cart-header {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: 700;
+            font-size: 14px;
+            color: #334155;
+        }
+        .cart-row {
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14.5px;
+        }
+        .cart-row:last-child {
+            border-bottom: none;
+        }
+        .cart-row:hover {
+            background: #f8fafc;
+        }
+        .qty-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-qty {
+            width: 34px;
+            height: 34px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-qty:hover:not(:disabled) {
+            background: #e2e8f0;
+        }
+        .btn-qty:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .qty-input {
+            width: 64px;
+            height: 34px;
+            text-align: center;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .col-subtotal {
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .btn-remove {
+            padding: 7px 14px;
+            border: none;
+            border-radius: 8px;
+            background: #fee2e2;
+            color: #dc2626;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-remove:hover {
+            background: #fecaca;
+        }
+        .empty-cart {
+            text-align: center;
+            padding: 42px 20px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            color: #64748b;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .cart-summary {
+            margin-top: 22px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px 22px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .summary-item {
+            font-size: 15px;
+            color: #334155;
+        }
+        .summary-item strong {
+            font-size: 19px;
+            color: #0f172a;
+            margin-left: 6px;
+        }
+        .summary-item.total strong {
+            font-size: 22px;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="top-nav">
+            <a href="index.html">Trang chủ TH7</a>
+            <a href="bai1.html">Bài 1: Quản lý & Thống kê SP</a>
+            <a href="bai2.html">Bài 2: Component Sản phẩm</a>
+            <a href="bai3.html" class="active">Bài 3: Giỏ hàng (Props & $emit)</a>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>🛒 Giỏ Hàng Với Props Và $emit (&lt;dong-gio-hang&gt;)</h2>
+                <button type="button" class="btn-reset" @click="khoiPhucMau">
+                    🔄 Khôi phục dữ liệu kiểm tra mẫu
+                </button>
+            </div>
+
+            <div class="card-body">
+                <div class="message-alert" v-if="thongBaoLoi">
+                    ⚠️ {{ thongBaoLoi }}
+                </div>
+
+                <!-- Hiển thị danh sách giỏ hàng khi có sản phẩm -->
+                <div class="cart-table" v-if="gioHang.length > 0">
+                    <div class="cart-header">
+                        <div>Mã SP</div>
+                        <div>Tên sản phẩm</div>
+                        <div>Đơn giá</div>
+                        <div>Số lượng (1 - 99)</div>
+                        <div>Thành tiền</div>
+                        <div>Thao tác</div>
+                    </div>
+
+                    <!-- Yêu cầu 2, 3, 4: Sử dụng component con <dong-gio-hang>, truyền props và lắng nghe sự kiện doi-so-luong, yeu-cau-xoa -->
+                    <dong-gio-hang
+                        v-for="muc in gioHang"
+                        :key="muc.id"
+                        :id="muc.id"
+                        :ten="muc.ten"
+                        :don-gia="muc.donGia"
+                        :so-luong="muc.soLuong"
+                        @doi-so-luong="capNhatSoLuong"
+                        @yeu-cau-xoa="xoaKhoiGio"
+                    ></dong-gio-hang>
+                </div>
+
+                <!-- Yêu cầu 8: Khi xóa hết sản phẩm, hiển thị "Giỏ hàng trống" -->
+                <div class="empty-cart" v-else>
+                    Giỏ hàng trống
+                </div>
+
+                <!-- Yêu cầu 7: Component cha dùng computed tính tổng số lượng và tổng tiền -->
+                <div class="cart-summary">
+                    <div class="summary-item">
+                        Tổng số lượng sản phẩm:
+                        <strong>{{ tongSoLuong }}</strong>
+                    </div>
+                    <div class="summary-item total">
+                        Tổng tiền thanh toán:
+                        <strong>{{ formatCurrency(tongTien) }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="components/DongGioHang.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        const app = createApp({
+            data() {
+                return {
+                    thongBaoLoi: '',
+                    // Yêu cầu 1 & Kết quả kiểm tra: 2 bút giá 5.000 đồng và 3 quyển vở giá 12.000 đồng => Tổng SL: 5, Tổng tiền: 46.000 đồng
+                    gioHang: [
+                        { id: 1, ten: 'Bút bi Thiên Long', donGia: 5000, soLuong: 2 },
+                        { id: 2, ten: 'Quyển vở kẻ ngang', donGia: 12000, soLuong: 3 }
+                    ]
+                };
+            },
+            computed: {
+                // Yêu cầu 7: Tính tổng số lượng
+                tongSoLuong() {
+                    return this.gioHang.reduce((sum, item) => sum + item.soLuong, 0);
+                },
+                // Yêu cầu 7: Tính tổng tiền
+                tongTien() {
+                    return this.gioHang.reduce((sum, item) => sum + item.donGia * item.soLuong, 0);
+                }
+            },
+            methods: {
+                // Yêu cầu 4 & 5: Component cha nhận sự kiện doi-so-luong, kiểm tra số nguyên từ 1 đến 99 rồi cập nhật mảng
+                capNhatSoLuong(idSanPham, soLuongMoi) {
+                    if (
+                        typeof soLuongMoi !== 'number' ||
+                        !Number.isInteger(soLuongMoi) ||
+                        soLuongMoi < 1 ||
+                        soLuongMoi > 99
+                    ) {
+                        this.thongBaoLoi = 'Số lượng chỉ được nhận giá trị nguyên từ 1 đến 99!';
+                        return;
+                    }
+
+                    this.thongBaoLoi = '';
+                    const sanPham = this.gioHang.find(item => item.id === idSanPham);
+                    if (sanPham) {
+                        sanPham.soLuong = soLuongMoi;
+                    }
+                },
+                // Yêu cầu 4: Component cha nhận sự kiện yeu-cau-xoa, kiểm tra rồi cập nhật mảng
+                xoaKhoiGio(idSanPham) {
+                    this.thongBaoLoi = '';
+                    this.gioHang = this.gioHang.filter(item => item.id !== idSanPham);
+                },
+                khoiPhucMau() {
+                    this.thongBaoLoi = '';
+                    this.gioHang = [
+                        { id: 1, ten: 'Bút bi Thiên Long', donGia: 5000, soLuong: 2 },
+                        { id: 2, ten: 'Quyển vở kẻ ngang', donGia: 12000, soLuong: 3 }
+                    ];
+                },
+                formatCurrency(val) {
+                    return Number(val).toLocaleString('vi-VN') + ' đồng';
+                }
+            }
+        });
+
+        app.component('dong-gio-hang', DongGioHang);
+        app.mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 2 - Danh mục sản phẩm bằng Component (Vue 3)</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            padding: 28px 16px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .top-nav {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .top-nav a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #4f46e5;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
+        }
+        .top-nav a.active, .top-nav a:hover {
+            background: #4f46e5;
+            color: #ffffff;
+        }
+        .page-banner {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: #ffffff;
+            padding: 24px 28px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+        }
+        .page-banner h1 {
+            font-size: 24px;
+            margin-bottom: 6px;
+        }
+        .page-banner p {
+            font-size: 14px;
+            color: #cbd5e1;
+        }
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 22px;
+        }
+        .product-card {
+            background: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(30, 41, 59, 0.07);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .product-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 26px rgba(30, 41, 59, 0.12);
+        }
+        .product-card.out-of-stock {
+            border-color: #fecaca;
+        }
+        .product-image-wrap {
+            position: relative;
+            height: 195px;
+            background: #f1f5f9;
+            overflow: hidden;
+        }
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .stock-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+        .stock-badge.in-stock {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .stock-badge.out-stock {
+            background: #dc2626;
+            color: #ffffff;
+        }
+        .product-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .product-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+        .product-price {
+            font-size: 19px;
+            font-weight: 800;
+            color: #dc2626;
+            margin-bottom: 16px;
+        }
+        .product-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-desc {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-desc:hover {
+            background: #e2e8f0;
+        }
+        .btn-buy {
+            flex: 1;
+            padding: 10px 14px;
+            border: none;
+            background: #4f46e5;
+            color: #ffffff;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-buy:hover:not(:disabled) {
+            background: #4338ca;
+        }
+        .btn-buy:disabled {
+            background: #cbd5e1;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+        .product-desc {
+            margin-top: 14px;
+            padding: 12px 14px;
+            background: #f8fafc;
+            border-left: 4px solid #4f46e5;
+            border-radius: 6px;
+            font-size: 13.5px;
+            line-height: 1.55;
+            color: #334155;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="top-nav">
+            <a href="index.html">Trang chủ TH7</a>
+            <a href="bai1.html">Bài 1: Quản lý & Thống kê SP</a>
+            <a href="bai2.html" class="active">Bài 2: Component Sản phẩm</a>
+            <a href="bai3.html">Bài 3: Giỏ hàng (Props & $emit)</a>
+        </div>
+
+        <div class="page-banner">
+            <h1>🛍️ Danh Mục Sản Phẩm Bằng Component &lt;the-san-pham&gt;</h1>
+            <p>Mỗi sản phẩm được hiển thị bằng component độc lập, nhận dữ liệu qua props và có trạng thái đóng/mở mô tả riêng.</p>
+        </div>
+
+        <!-- Yêu cầu 4: Truyền dữ liệu từ cha xuống con bằng cú pháp binding phù hợp -->
+        <div class="product-grid">
+            <the-san-pham
+                v-for="sp in danhSachSanPham"
+                :key="sp.id"
+                :ten="sp.ten"
+                :gia="sp.gia"
+                :anh="sp.anh"
+                :mo-ta="sp.moTa"
+                :so-luong-ton="sp.soLuongTon"
+            ></the-san-pham>
+        </div>
+    </div>
+
+    <!-- Yêu cầu 8: Tách component vào file components/TheSanPham.js, nạp và đăng ký trước khi mount -->
+    <script src="components/TheSanPham.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        const app = createApp({
+            data() {
+                return {
+                    // Yêu cầu 1: Component cha quản lý danh sách ít nhất 4 sản phẩm
+                    danhSachSanPham: [
+                        {
+                            id: 1,
+                            ten: 'MacBook Air M3 13 inch',
+                            gia: 27990000,
+                            anh: 'https://placehold.co/600x400/1e1b4b/ffffff?text=MacBook+Air+M3',
+                            moTa: 'Laptop mỏng nhẹ hiệu năng vượt trội với chip Apple M3, màn hình Liquid Retina sắc nét và thời lượng pin lên đến 18 giờ.',
+                            soLuongTon: 6
+                        },
+                        {
+                            id: 2,
+                            ten: 'Tai nghe Sony WH-1000XM5',
+                            gia: 6490000,
+                            anh: 'https://placehold.co/600x400/0f766e/ffffff?text=Sony+WH-1000XM5',
+                            moTa: 'Tai nghe chống ồn chủ động hàng đầu thế giới, âm thanh Hi-Res Audio và thời lượng pin 30 giờ.',
+                            soLuongTon: 0
+                        },
+                        {
+                            id: 3,
+                            ten: 'Bàn phím cơ Keychron Q1 Pro',
+                            gia: 4250000,
+                            anh: 'https://placehold.co/600x400/9a3412/ffffff?text=Keychron+Q1+Pro',
+                            moTa: 'Bàn phím cơ khung nhôm CNC nguyên khối, kết nối không dây Bluetooth 5.1, hỗ trợ QMK/VIA.',
+                            soLuongTon: 8
+                        },
+                        {
+                            id: 4,
+                            ten: 'Chuột Logitech MX Master 3S',
+                            gia: 2490000,
+                            anh: 'https://placehold.co/600x400/1d4ed8/ffffff?text=MX+Master+3S',
+                            moTa: 'Chuột công thái học cao cấp với cuộn siêu tốc MagSpeed, cảm biến 8000 DPI hoạt động trên cả mặt kính.',
+                            soLuongTon: 0
+                        },
+                        {
+                            id: 5,
+                            ten: 'Màn hình LG UltraFine 27" 4K',
+                            gia: 9890000,
+                            anh: 'https://placehold.co/600x400/6d28d9/ffffff?text=LG+UltraFine+4K',
+                            moTa: 'Màn hình IPS 4K UHD chuẩn màu 99% sRGB, hỗ trợ cổng USB-C sạc 65W tiện lợi cho lập trình và đồ họa.',
+                            soLuongTon: 4
+                        },
+                        {
+                            id: 6,
+                            ten: 'Giá đỡ Laptop Nhôm Hợp Kim',
+                            gia: 390000
+                            // Minh họa sử dụng giá trị mặc định (default) của prop ảnh, mô tả và số lượng tồn
+                        }
+                    ]
+                };
+            }
+        });
+
+        // Đăng ký component trước khi mount ứng dụng
+        app.component('the-san-pham', TheSanPham);
+        app.mount('#app');
+    </script>
+</body>
+</html>
+

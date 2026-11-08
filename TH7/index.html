@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài Tập Thực Hành Số 7 - Vue 3</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+            min-height: 100vh;
+            padding: 48px 16px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .header h1 {
+            font-size: 28px;
+            color: #312e81;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: #64748b;
+            font-size: 15px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 20px rgba(30, 41, 59, 0.06);
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid #e2e8f0;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(79, 70, 229, 0.14);
+            border-color: #6366f1;
+        }
+        .card-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #e0e7ff;
+            color: #4338ca;
+            margin-bottom: 12px;
+            width: fit-content;
+        }
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: #0f172a;
+        }
+        .card p {
+            font-size: 14px;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+        .card-link {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4f46e5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>BÀI TẬP THỰC HÀNH VUE 3 (TH7)</h1>
+            <p>Sinh viên: Phạm Trung Hiếu - MSSV: 23001876 - Lớp: K68-Khoa học máy tính và thông tin</p>
+        </div>
+
+        <div class="grid">
+            <a href="bai1.html" class="card">
+                <div>
+                    <span class="card-badge">Bài 1</span>
+                    <h2>Danh sách sản phẩm có tìm kiếm và thống kê</h2>
+                    <p>Kiến thức: Directive, methods, computed, watch, mounted(). Tìm kiếm, lọc danh mục, sắp xếp giá và thống kê tồn kho.</p>
+                </div>
+                <span class="card-link">Mở bài làm →</span>
+            </a>
+
+            <a href="bai2.html" class="card">
+                <div>
+                    <span class="card-badge">Bài 2</span>
+                    <h2>Danh mục sản phẩm bằng component</h2>
+                    <p>Kiến thức: Đăng ký component &lt;the-san-pham&gt;, props (type, required, default), data() riêng, tách file components/TheSanPham.js.</p>
+                </div>
+                <span class="card-link">Mở bài làm →</span>
+            </a>
+
+            <a href="bai3.html" class="card">
+                <div>
+                    <span class="card-badge">Bài 3</span>
+                    <h2>Giỏ hàng với props và $emit</h2>
+                    <p>Kiến thức: Component &lt;dong-gio-hang&gt;, luồng dữ liệu một chiều, phát sự kiện doi-so-luong và yeu-cau-xoa, computed tổng tiền.</p>
+                </div>
+                <span class="card-link">Mở bài làm →</span>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
+

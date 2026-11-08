@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bài 1 - Danh sách sản phẩm có tìm kiếm và thống kê (Vue 3)</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #eef2ff 0%, #f8fafc 100%);
+            min-height: 100vh;
+            padding: 28px 16px;
+            color: #1e293b;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .top-nav {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .top-nav a {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: #ffffff;
+            color: #4f46e5;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
+        }
+        .top-nav a.active, .top-nav a:hover {
+            background: #4f46e5;
+            color: #ffffff;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(30, 41, 59, 0.07);
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: #ffffff;
+            padding: 20px 26px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .card-header h2 {
+            font-size: 21px;
+        }
+        .status-pill {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .card-body {
+            padding: 24px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+        .stat-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+        .stat-label {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+        .stat-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .stat-value.highlight {
+            color: #4f46e5;
+        }
+        .filter-bar {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+        @media (max-width: 768px) {
+            .filter-bar {
+                grid-template-columns: 1fr;
+            }
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 6px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #4f46e5;
+        }
+        .watch-warning {
+            background: #fef9c3;
+            border: 1px solid #fde047;
+            color: #854d0e;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .table-wrapper {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 720px;
+        }
+        th, td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+        th {
+            background: #f1f5f9;
+            color: #334155;
+            font-weight: 700;
+        }
+        tr:hover td {
+            background: #f8fafc;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        /* Yêu cầu 1: Nhãn Còn hàng và Hết hàng bằng màu khác nhau */
+        .badge-instock {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+        }
+        .badge-outstock {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: 1px solid #fca5a5;
+        }
+        .btn-delete {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #fee2e2;
+            color: #dc2626;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-delete:hover {
+            background: #fecaca;
+        }
+        .empty-row {
+            text-align: center;
+            color: #64748b;
+            padding: 28px !important;
+            font-style: italic;
+        }
+        .add-form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr 1.2fr 1fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+        @media (max-width: 900px) {
+            .add-form-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        @media (max-width: 560px) {
+            .add-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .btn-add {
+            padding: 10px 20px;
+            background: #4f46e5;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            height: 39px;
+        }
+        .btn-add:hover {
+            background: #4338ca;
+        }
+        .error-box {
+            margin-top: 12px;
+            padding: 10px 14px;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container">
+        <div class="top-nav">
+            <a href="index.html">Trang chủ TH7</a>
+            <a href="bai1.html" class="active">Bài 1: Quản lý & Thống kê SP</a>
+            <a href="bai2.html">Bài 2: Component Sản phẩm</a>
+            <a href="bai3.html">Bài 3: Giỏ hàng (Props & $emit)</a>
+        </div>
+
+        <!-- Form thêm sản phẩm mới (Yêu cầu 6) -->
+        <div class="card">
+            <div class="card-header">
+                <h2>➕ Thêm Sản Phẩm Mới</h2>
+                <!-- Yêu cầu 10: Dùng mounted() đặt trạng thái trang thành "Sẵn sàng" -->
+                <span class="status-pill">Trạng thái trang: {{ pageStatus }}</span>
+            </div>
+            <div class="card-body">
+                <form @submit.prevent="addProduct">
+                    <div class="add-form-grid">
+                        <div class="form-group">
+                            <label>Tên sản phẩm:</label>
+                            <input type="text" class="form-control" v-model="newProduct.name" placeholder="Nhập tên sản phẩm...">
+                        </div>
+                        <div class="form-group">
+                            <label>Danh mục:</label>
+                            <select class="form-control" v-model="newProduct.category">
+                                <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Giá bán (VNĐ):</label>
+                            <input type="number" class="form-control" v-model.number="newProduct.price" placeholder="Ví dụ: 250000">
+                        </div>
+                        <div class="form-group">
+                            <label>Số lượng tồn:</label>
+                            <input type="number" class="form-control" v-model.number="newProduct.stock" placeholder="Ví dụ: 10">
+                        </div>
+                        <button type="submit" class="btn-add">Thêm sản phẩm</button>
+                    </div>
+                    <div class="error-box" v-if="formError">{{ formError }}</div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bảng danh sách sản phẩm, tìm kiếm, lọc, sắp xếp và thống kê -->
+        <div class="card">
+            <div class="card-body">
+                <!-- Yêu cầu 8: Dùng computed hiển thị số SP đang hiển thị / tổng số SP và tổng giá trị tồn kho -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Số sản phẩm đang hiển thị / Tổng số</div>
+                        <div class="stat-value">{{ displayedCount }} / {{ totalCount }} sản phẩm</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Tổng giá trị tồn kho (các sản phẩm đang hiển thị)</div>
+                        <div class="stat-value highlight">{{ formatCurrency(displayedInventoryValue) }}</div>
+                    </div>
+                </div>
+
+                <!-- Yêu cầu 2, 3, 4, 5: Tìm kiếm, lọc danh mục và sắp xếp kết hợp -->
+                <div class="filter-bar">
+                    <div class="form-group">
+                        <label>🔍 Tìm kiếm theo tên:</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            v-model="searchKeyword"
+                            placeholder="Nhập từ khóa tên sản phẩm..."
+                        >
+                    </div>
+                    <div class="form-group">
+                        <label>📂 Lọc theo danh mục:</label>
+                        <select class="form-control" v-model="selectedCategory">
+                            <option value="all">-- Tất cả danh mục --</option>
+                            <option v-for="cat in categories" :key="cat" :value="cat">{{ cat }}</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>🔃 Sắp xếp theo giá:</label>
+                        <select class="form-control" v-model="sortOrder">
+                            <option value="default">Mặc định (Thứ tự gốc)</option>
+                            <option value="asc">Giá tăng dần</option>
+                            <option value="desc">Giá giảm dần</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Yêu cầu 9: Dùng watch thông báo khi từ khóa có đúng 1 ký tự -->
+                <div class="watch-warning" v-if="searchWarning">
+                    ⚠️ {{ searchWarning }}
+                </div>
+
+                <!-- Yêu cầu 1 & 7: Hiển thị bảng sản phẩm + nhãn trạng thái + nút xóa có xác nhận -->
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Danh mục</th>
+                                <th>Đơn giá</th>
+                                <th>Tồn kho</th>
+                                <th>Giá trị tồn kho</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="item in filteredAndSortedProducts" :key="item.id">
+                                <td>#{{ item.id }}</td>
+                                <td><strong>{{ item.name }}</strong></td>
+                                <td>{{ item.category }}</td>
+                                <td>{{ formatCurrency(item.price) }}</td>
+                                <td>{{ item.stock }}</td>
+                                <td><strong>{{ formatCurrency(item.price * item.stock) }}</strong></td>
+                                <td>
+                                    <span v-if="item.stock > 0" class="badge badge-instock">Còn hàng</span>
+                                    <span v-else class="badge badge-outstock">Hết hàng</span>
+                                </td>
+                                <td>
+                                    <button class="btn-delete" @click="deleteProduct(item)">Xóa</button>
+                                </td>
+                            </tr>
+                            <tr v-if="filteredAndSortedProducts.length === 0">
+                                <td colspan="8" class="empty-row">
+                                    Không tìm thấy sản phẩm nào phù hợp với bộ lọc hiện tại.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    pageStatus: 'Đang khởi tạo...',
+                    searchKeyword: '',
+                    searchWarning: '',
+                    selectedCategory: 'all',
+                    sortOrder: 'default',
+                    categories: ['Laptop', 'Phụ kiện', 'Màn hình'],
+                    nextId: 7,
+                    formError: '',
+                    newProduct: {
+                        name: '',
+                        category: 'Laptop',
+                        price: null,
+                        stock: null
+                    },
+                    // Ít nhất 6 sản phẩm thuộc 3 danh mục
+                    products: [
+                        { id: 1, name: 'Laptop ASUS Vivobook 15', price: 15990000, category: 'Laptop', stock: 5 },
+                        { id: 2, name: 'Laptop Dell Inspiron 14', price: 18500000, category: 'Laptop', stock: 0 },
+                        { id: 3, name: 'Chuột không dây Logitech G304', price: 790000, category: 'Phụ kiện', stock: 12 },
+                        { id: 4, name: 'Bàn phím cơ Keychron K6', price: 1950000, category: 'Phụ kiện', stock: 4 },
+                        { id: 5, name: 'Màn hình LG UltraGear 24 inch', price: 3690000, category: 'Màn hình', stock: 0 },
+                        { id: 6, name: 'Màn hình Dell UltraSharp 27 inch', price: 8900000, category: 'Màn hình', stock: 3 }
+                    ]
+                };
+            },
+            computed: {
+                // Yêu cầu 2, 3, 4, 5: Tìm kiếm, lọc và sắp xếp hoạt động kết hợp, không đổi thứ tự mảng gốc
+                filteredAndSortedProducts() {
+                    const keyword = this.searchKeyword.trim().toLowerCase();
+
+                    // Lọc theo từ khóa và danh mục
+                    const filtered = this.products.filter(product => {
+                        const matchName = product.name.toLowerCase().includes(keyword);
+                        const matchCategory = this.selectedCategory === 'all' || product.category === this.selectedCategory;
+                        return matchName && matchCategory;
+                    });
+
+                    // Sắp xếp trên bản sao của mảng để không làm thay đổi mảng dữ liệu gốc
+                    if (this.sortOrder === 'asc') {
+                        return [...filtered].sort((a, b) => a.price - b.price);
+                    }
+                    if (this.sortOrder === 'desc') {
+                        return [...filtered].sort((a, b) => b.price - a.price);
+                    }
+                    return filtered;
+                },
+                // Yêu cầu 8: Số sản phẩm đang hiển thị
+                displayedCount() {
+                    return this.filteredAndSortedProducts.length;
+                },
+                // Yêu cầu 8: Tổng số sản phẩm
+                totalCount() {
+                    return this.products.length;
+                },
+                // Yêu cầu 8: Tổng giá trị tồn kho của các sản phẩm đang hiển thị
+                displayedInventoryValue() {
+                    return this.filteredAndSortedProducts.reduce((sum, item) => {
+                        return sum + item.price * item.stock;
+                    }, 0);
+                }
+            },
+            watch: {
+                // Yêu cầu 9: Thông báo khi từ khóa có đúng 1 ký tự; xóa thông báo khi rỗng hoặc >= 2 ký tự
+                searchKeyword(newVal) {
+                    if (newVal.length === 1) {
+                        this.searchWarning = 'Từ khóa chỉ có 1 ký tự. Hãy nhập từ 2 ký tự trở lên để kết quả tìm kiếm chính xác hơn.';
+                    } else {
+                        this.searchWarning = '';
+                    }
+                }
+            },
+            methods: {
+                // Yêu cầu 6: Thêm sản phẩm mới, kiểm tra tên không rỗng, giá > 0, tồn kho là số nguyên không âm
+                addProduct() {
+                    const trimmedName = this.newProduct.name.trim();
+                    const price = this.newProduct.price;
+                    const stock = this.newProduct.stock;
+
+                    if (!trimmedName) {
+                        this.formError = 'Tên sản phẩm không được để trống!';
+                        return;
+                    }
+                    if (typeof price !== 'number' || isNaN(price) || price <= 0) {
+                        this.formError = 'Giá sản phẩm phải lớn hơn 0!';
+                        return;
+                    }
+                    if (typeof stock !== 'number' || !Number.isInteger(stock) || stock < 0) {
+                        this.formError = 'Số lượng tồn kho phải là số nguyên không âm (0, 1, 2, ...)!';
+                        return;
+                    }
+
+                    this.products.push({
+                        id: this.nextId++,
+                        name: trimmedName,
+                        category: this.newProduct.category,
+                        price: price,
+                        stock: stock
+                    });
+
+                    this.newProduct.name = '';
+                    this.newProduct.price = null;
+                    this.newProduct.stock = null;
+                    this.formError = '';
+                },
+                // Yêu cầu 7: Xóa sản phẩm sau khi người dùng xác nhận
+                deleteProduct(product) {
+                    const confirmed = window.confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${product.name}" không?`);
+                    if (confirmed) {
+                        this.products = this.products.filter(item => item.id !== product.id);
+                    }
+                },
+                formatCurrency(value) {
+                    return value.toLocaleString('vi-VN') + ' đồng';
+                }
+            },
+            // Yêu cầu 10: Dùng mounted() đặt trạng thái trang thành "Sẵn sàng"
+            mounted() {
+                this.pageStatus = 'Sẵn sàng';
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
+
