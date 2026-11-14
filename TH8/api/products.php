@@ -10,7 +10,9 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+if ($method === 'OPTIONS') {
     http_response_code(200);
     exit;
 }
@@ -31,22 +33,39 @@ function sendJsonResponse(bool $success, array $extra = [], int $statusCode = 20
 }
 
 /**
- * Kiểm tra giá trị có phải là số nguyên hợp lệ hay không
+ * Kiểm tra và chuyển đổi số nguyên hợp lệ theo khoảng [min, max] của kiểu INT trong MySQL
  */
-function isValidInteger($value): bool {
-    if (is_bool($value) || is_array($value) || is_object($value) || $value === null || $value === '') {
-        return false;
+function validateIntInRange($value, int $min, int $max = 2147483647): ?int {
+    if (is_bool($value) || is_float($value) || is_array($value) || is_object($value) || $value === null || $value === '') {
+        return null;
     }
-    if (is_int($value)) {
-        return true;
-    }
-    if (is_float($value)) {
-        return floor($value) === $value;
-    }
+
     if (is_string($value)) {
-        return preg_match('/^-?\d+$/', trim($value)) === 1;
+        $value = trim($value);
+        if ($value === '' || preg_match('/^-?\d+$/', $value) !== 1) {
+            return null;
+        }
     }
-    return false;
+
+    $filtered = filter_var($value, FILTER_VALIDATE_INT, [
+        'options' => [
+            'min_range' => $min,
+            'max_range' => $max
+        ]
+    ]);
+
+    return ($filtered === false) ? null : $filtered;
+}
+
+/**
+ * Đếm số ký tự Unicode UTF-8 chính xác kể cả khi máy chưa bật mbstring
+ */
+function getUtf8Length(string $str): int {
+    if (function_exists('mb_strlen')) {
+        return mb_strlen($str, 'UTF-8');
+    }
+    $count = preg_match_all('/./us', $str);
+    return $count === false ? strlen($str) : $count;
 }
 
 /**
@@ -60,9 +79,15 @@ function validateProductInput(?array $input): array {
         ];
     }
 
-    $rawName  = isset($input['name']) && is_string($input['name']) ? $input['name'] : '';
-    $name     = trim($rawName);
-    $nameLen  = function_exists('mb_strlen') ? mb_strlen($name, 'UTF-8') : strlen($name);
+    if (!isset($input['name']) || !is_string($input['name'])) {
+        return [
+            'valid'   => false,
+            'message' => 'Tên sản phẩm bắt buộc nhập và phải là chuỗi ký tự.'
+        ];
+    }
+
+    $name    = trim($input['name']);
+    $nameLen = getUtf8Length($name);
 
     if ($nameLen < 1 || $nameLen > 100) {
         return [
@@ -71,14 +96,16 @@ function validateProductInput(?array $input): array {
         ];
     }
 
-    if (!array_key_exists('price', $input) || !isValidInteger($input['price']) || (int)$input['price'] <= 0) {
+    $price = array_key_exists('price', $input) ? validateIntInRange($input['price'], 1) : null;
+    if ($price === null) {
         return [
             'valid'   => false,
             'message' => 'Đơn giá phải là số nguyên lớn hơn 0.'
         ];
     }
 
-    if (!array_key_exists('stock', $input) || !isValidInteger($input['stock']) || (int)$input['stock'] < 0) {
+    $stock = array_key_exists('stock', $input) ? validateIntInRange($input['stock'], 0) : null;
+    if ($stock === null) {
         return [
             'valid'   => false,
             'message' => 'Số lượng tồn phải là số nguyên không âm (từ 0 trở lên).'
@@ -89,8 +116,8 @@ function validateProductInput(?array $input): array {
         'valid' => true,
         'data'  => [
             'name'  => $name,
-            'price' => (int)$input['price'],
-            'stock' => (int)$input['stock']
+            'price' => $price,
+            'stock' => $stock
         ]
     ];
 }
@@ -118,8 +145,8 @@ try {
             CREATE TABLE `products` (
                 `id` INT AUTO_INCREMENT PRIMARY KEY,
                 `name` VARCHAR(100) NOT NULL,
-                `price` INT NOT NULL,
-                `stock` INT NOT NULL
+                `price` INT NOT NULL CHECK (`price` > 0),
+                `stock` INT NOT NULL CHECK (`stock` >= 0)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
         ");
         $pdo->exec("
@@ -135,8 +162,6 @@ try {
     ], 500);
 }
 
-$method = $_SERVER['REQUEST_METHOD'];
-
 try {
     // 1. GET api/products.php -> Trả về danh sách sản phẩm
     if ($method === 'GET') {
@@ -145,6 +170,7 @@ try {
 
         foreach ($rows as &$row) {
             $row['id']    = (int)$row['id'];
+            $row['name']  = (string)$row['name'];
             $row['price'] = (int)$row['price'];
             $row['stock'] = (int)$row['stock'];
         }
@@ -179,18 +205,9 @@ try {
 
     // 3. PUT api/products.php?id=1 -> Cập nhật sản phẩm theo id trên URL
     if ($method === 'PUT') {
-        $idParam = $_GET['id'] ?? null;
-        if (!isValidInteger($idParam) || (int)$idParam <= 0) {
+        $id = validateIntInRange($_GET['id'] ?? null, 1);
+        if ($id === null) {
             sendJsonResponse(false, ['message' => 'Mã sản phẩm (id) trên URL không hợp lệ.'], 400);
-        }
-        $id = (int)$idParam;
-
-        // Kiểm tra dữ liệu JSON gửi lên
-        $rawBody    = file_get_contents('php://input');
-        $input      = json_decode($rawBody, true);
-        $validation = validateProductInput($input);
-        if (!$validation['valid']) {
-            sendJsonResponse(false, ['message' => $validation['message']], 400);
         }
 
         // Kiểm tra sản phẩm có tồn tại không bằng PDO prepared statement
@@ -198,6 +215,14 @@ try {
         $checkStmt->execute([':id' => $id]);
         if (!$checkStmt->fetch()) {
             sendJsonResponse(false, ['message' => "Không tìm thấy sản phẩm có mã #{$id} để cập nhật."], 404);
+        }
+
+        // Kiểm tra dữ liệu JSON gửi lên
+        $rawBody    = file_get_contents('php://input');
+        $input      = json_decode($rawBody, true);
+        $validation = validateProductInput($input);
+        if (!$validation['valid']) {
+            sendJsonResponse(false, ['message' => $validation['message']], 400);
         }
 
         $data = $validation['data'];
@@ -214,11 +239,10 @@ try {
 
     // 4. DELETE api/products.php?id=1 -> Xóa sản phẩm theo id trên URL
     if ($method === 'DELETE') {
-        $idParam = $_GET['id'] ?? null;
-        if (!isValidInteger($idParam) || (int)$idParam <= 0) {
+        $id = validateIntInRange($_GET['id'] ?? null, 1);
+        if ($id === null) {
             sendJsonResponse(false, ['message' => 'Mã sản phẩm (id) trên URL không hợp lệ.'], 400);
         }
-        $id = (int)$idParam;
 
         // Kiểm tra sản phẩm có tồn tại không bằng PDO prepared statement
         $checkStmt = $pdo->prepare('SELECT id FROM products WHERE id = :id');
