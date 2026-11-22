@@ -1,6 +1,7 @@
 <?php
 /**
- * Câu 2: Xây dựng API bằng PHP (api/products.php)
+ * API Quản lý Sản phẩm (CRUD + Phân trang Backend)
+ * Đường dẫn: api/products.php
  * Thực hành PHP và Vue.js - TH8
  * Sinh viên: Phạm Trung Hiếu - MSSV: 23001876
  */
@@ -17,45 +18,7 @@ if ($method === 'OPTIONS') {
     exit;
 }
 
-$host     = 'localhost';
-$dbname   = 'th8_products';
-$username = 'root';
-$password = '';
-$charset  = 'utf8mb4';
-
-/**
- * Hàm trả về phản hồi JSON thống nhất
- */
-function sendJsonResponse(bool $success, array $extra = [], int $statusCode = 200): void {
-    http_response_code($statusCode);
-    echo json_encode(array_merge(['success' => $success], $extra), JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-/**
- * Kiểm tra và chuyển đổi số nguyên hợp lệ theo khoảng [min, max] của kiểu INT trong MySQL
- */
-function validateIntInRange($value, int $min, int $max = 2147483647): ?int {
-    if (is_bool($value) || is_float($value) || is_array($value) || is_object($value) || $value === null || $value === '') {
-        return null;
-    }
-
-    if (is_string($value)) {
-        $value = trim($value);
-        if ($value === '' || preg_match('/^-?\d+$/', $value) !== 1) {
-            return null;
-        }
-    }
-
-    $filtered = filter_var($value, FILTER_VALIDATE_INT, [
-        'options' => [
-            'min_range' => $min,
-            'max_range' => $max
-        ]
-    ]);
-
-    return ($filtered === false) ? null : $filtered;
-}
+require_once __DIR__ . '/db.php';
 
 /**
  * Đếm số ký tự Unicode UTF-8 chính xác kể cả khi máy chưa bật mbstring
@@ -122,50 +85,51 @@ function validateProductInput(?array $input): array {
     ];
 }
 
-// Kết nối MySQL bằng PDO (tự động khởi tạo CSDL & bảng mẫu nếu chưa có)
-try {
-    $pdo = new PDO(
-        "mysql:host={$host};charset={$charset}",
-        $username,
-        $password,
-        [
-            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-        ]
-    );
-
-    $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbname}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-    $pdo->exec("USE `{$dbname}`");
-
-    // Kiểm tra bảng products đã tồn tại chưa, nếu chưa thì tạo bảng và thêm 3 dòng mẫu
-    $tableCheck = $pdo->query("SHOW TABLES LIKE 'products'")->fetch();
-    if (!$tableCheck) {
-        $pdo->exec("
-            CREATE TABLE `products` (
-                `id` INT AUTO_INCREMENT PRIMARY KEY,
-                `name` VARCHAR(100) NOT NULL,
-                `price` INT NOT NULL CHECK (`price` > 0),
-                `stock` INT NOT NULL CHECK (`stock` >= 0)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
-        ");
-        $pdo->exec("
-            INSERT INTO `products` (`name`, `price`, `stock`) VALUES
-            ('Bút bi', 5000, 20),
-            ('Vở ô ly', 12000, 15),
-            ('Thước kẻ', 8000, 0)
-        ");
-    }
-} catch (PDOException $e) {
-    sendJsonResponse(false, [
-        'message' => 'Không thể kết nối cơ sở dữ liệu MySQL: ' . $e->getMessage()
-    ], 500);
-}
+$pdo = getPdoConnection();
 
 try {
-    // 1. GET api/products.php -> Trả về danh sách sản phẩm
+    // 1. GET api/products.php?page=1&limit=5 -> Trả về danh sách sản phẩm có phân trang
     if ($method === 'GET') {
-        $stmt = $pdo->query('SELECT id, name, price, stock FROM products ORDER BY id ASC');
+        // Kiểm tra tham số page (mặc định 1 nếu không truyền; nếu có truyền phải là số nguyên dương)
+        if (array_key_exists('page', $_GET)) {
+            $page = validateIntInRange($_GET['page'], 1);
+            if ($page === null) {
+                sendJsonResponse(false, [
+                    'message' => 'Tham số page phải là số nguyên dương.'
+                ], 400);
+            }
+        } else {
+            $page = 1;
+        }
+
+        // Kiểm tra tham số limit (mặc định 5 nếu không truyền; nếu có truyền phải bằng 5)
+        if (array_key_exists('limit', $_GET)) {
+            $limit = validateIntInRange($_GET['limit'], 1);
+            if ($limit === null || $limit !== 5) {
+                sendJsonResponse(false, [
+                    'message' => 'Tham số limit không hợp lệ (limit phải bằng 5).'
+                ], 400);
+            }
+        } else {
+            $limit = 5;
+        }
+
+        // Đếm tổng số sản phẩm
+        $total = (int)$pdo->query('SELECT COUNT(*) FROM products')->fetchColumn();
+        $totalPages = max(1, (int)ceil($total / $limit));
+
+        // Nếu page vượt quá trang cuối -> trả về trang cuối cùng và page thực tế
+        if ($page > $totalPages) {
+            $page = $totalPages;
+        }
+
+        $offset = ($page - 1) * $limit;
+
+        // Sắp xếp theo id giảm dần và dùng LIMIT, OFFSET bằng PDO prepared statement
+        $stmt = $pdo->prepare('SELECT id, name, price, stock, image FROM products ORDER BY id DESC LIMIT :limit OFFSET :offset');
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
         $rows = $stmt->fetchAll();
 
         foreach ($rows as &$row) {
@@ -173,12 +137,21 @@ try {
             $row['name']  = (string)$row['name'];
             $row['price'] = (int)$row['price'];
             $row['stock'] = (int)$row['stock'];
+            $row['image'] = ($row['image'] !== null && $row['image'] !== '') ? (string)$row['image'] : null;
         }
 
-        sendJsonResponse(true, ['data' => $rows]);
+        sendJsonResponse(true, [
+            'data'       => $rows,
+            'pagination' => [
+                'page'        => $page,
+                'limit'       => $limit,
+                'total'       => $total,
+                'total_pages' => $totalPages
+            ]
+        ]);
     }
 
-    // 2. POST api/products.php -> Thêm sản phẩm mới
+    // 2. POST api/products.php -> Thêm sản phẩm mới (trả về mã sản phẩm mới để Vue upload ảnh)
     if ($method === 'POST') {
         $rawBody = file_get_contents('php://input');
         $input   = json_decode($rawBody, true);
@@ -197,13 +170,22 @@ try {
             ':stock' => $data['stock']
         ]);
 
+        $newId = (int)$pdo->lastInsertId();
+
         sendJsonResponse(true, [
             'message' => 'Thêm sản phẩm mới thành công.',
-            'id'      => (int)$pdo->lastInsertId()
+            'id'      => $newId,
+            'data'    => [
+                'id'    => $newId,
+                'name'  => $data['name'],
+                'price' => $data['price'],
+                'stock' => $data['stock'],
+                'image' => null
+            ]
         ], 201);
     }
 
-    // 3. PUT api/products.php?id=1 -> Cập nhật sản phẩm theo id trên URL
+    // 3. PUT api/products.php?id=1 -> Cập nhật thông tin sản phẩm theo id (giữ nguyên cột image hiện tại)
     if ($method === 'PUT') {
         $id = validateIntInRange($_GET['id'] ?? null, 1);
         if ($id === null) {
@@ -211,9 +193,10 @@ try {
         }
 
         // Kiểm tra sản phẩm có tồn tại không bằng PDO prepared statement
-        $checkStmt = $pdo->prepare('SELECT id FROM products WHERE id = :id');
+        $checkStmt = $pdo->prepare('SELECT id, image FROM products WHERE id = :id');
         $checkStmt->execute([':id' => $id]);
-        if (!$checkStmt->fetch()) {
+        $existing = $checkStmt->fetch();
+        if (!$existing) {
             sendJsonResponse(false, ['message' => "Không tìm thấy sản phẩm có mã #{$id} để cập nhật."], 404);
         }
 
@@ -234,7 +217,10 @@ try {
             ':id'    => $id
         ]);
 
-        sendJsonResponse(true, ['message' => "Cập nhật sản phẩm #{$id} thành công."]);
+        sendJsonResponse(true, [
+            'message' => "Cập nhật sản phẩm #{$id} thành công.",
+            'id'      => $id
+        ]);
     }
 
     // 4. DELETE api/products.php?id=1 -> Xóa sản phẩm theo id trên URL
@@ -245,14 +231,25 @@ try {
         }
 
         // Kiểm tra sản phẩm có tồn tại không bằng PDO prepared statement
-        $checkStmt = $pdo->prepare('SELECT id FROM products WHERE id = :id');
+        $checkStmt = $pdo->prepare('SELECT id, image FROM products WHERE id = :id');
         $checkStmt->execute([':id' => $id]);
-        if (!$checkStmt->fetch()) {
+        $existing = $checkStmt->fetch();
+        if (!$existing) {
             sendJsonResponse(false, ['message' => "Không tìm thấy sản phẩm có mã #{$id} để xóa."], 404);
         }
 
         $deleteStmt = $pdo->prepare('DELETE FROM products WHERE id = :id');
         $deleteStmt->execute([':id' => $id]);
+
+        // Dọn dẹp file ảnh trong thư mục uploads nếu có
+        if (!empty($existing['image'])) {
+            $oldFilePath = dirname(__DIR__) . DIRECTORY_SEPARATOR . str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $existing['image']);
+            $uploadsDir  = realpath(dirname(__DIR__) . DIRECTORY_SEPARATOR . 'uploads');
+            $realOldFile = realpath($oldFilePath);
+            if ($uploadsDir && $realOldFile && strpos($realOldFile, $uploadsDir) === 0 && is_file($realOldFile)) {
+                @unlink($realOldFile);
+            }
+        }
 
         sendJsonResponse(true, ['message' => "Đã xóa sản phẩm #{$id} thành công."]);
     }
